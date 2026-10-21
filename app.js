@@ -2,7 +2,6 @@ if(process.env.NODE_ENV !="production"){
     require("dotenv").config();
 }
 
-
 const express= require("express");
 const app=express();
 const port= 3000;
@@ -44,18 +43,18 @@ app.use(express.static(path.join(__dirname, "public")));
 const store= MongoStore.create({
     mongoUrl:dbUrl,
     crypto:{
-        secret:"mysupersecretcode"
+        secret:process.env.SECRET,
     },
     touchAfter: 24 * 3600,
 });
 
-store.on("error",()=>{
+store.on("error",(err)=>{
     console.log("ERROR in MONGO SESSION STORE",err);
 });
 
 const sessionOptions ={
     store,
-    secret:"mysupersecretcode",
+    secret:process.env.SECRET,
     resave:false,
     saveUninitialized:true,
     cookie :{
@@ -90,10 +89,12 @@ app.all("/{*splat}",(req,res,next)=>{
     next(new ExpressError(404,"Page Not Found"));
 });
 
+
 app.use((err, req, res, next) => {
-    let {statusCode=500, message="Something went wrong"} = err;
-     res.render("error.ejs",{message});
+    let { statusCode = 500, message = "Something went wrong" } = err;
+    res.status(statusCode).send(message);
 });
+
 
 app.listen(port,()=>{
     console.log('Server connected in 3000');
